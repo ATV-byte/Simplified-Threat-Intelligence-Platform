@@ -1,0 +1,6 @@
+@Simplified_Threat_Intelligence_Platform_HostAddress = http://localhost:5062
+
+GET {{Simplified_Threat_Intelligence_Platform_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
