@@ -1,24 +1,35 @@
-using MongoDB.Driver;
+﻿using MongoDB.Driver;
+using Simplified_Threat_Intelligence_Platform.Data; // namespace-ul tău cu IndexInitializer
+using Simplified_Threat_Intelligence_Platform.Repositories;
+using Simplified_Threat_Intelligence_Platform.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-
+// Add services
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// MongoDB
 builder.Services.AddSingleton<IMongoDatabase>(sp =>
 {
     var cfg = builder.Configuration.GetSection("Mongo");
     var client = new MongoClient(cfg["ConnectionString"]);
-    return client.GetDatabase(cfg["Database"]);
+    var db = client.GetDatabase(cfg["Database"]);
+
+    IndexInitializer.EnsureAsync(db).GetAwaiter().GetResult();
+
+    return db;
 });
+
+// DI pentru repo și service
+builder.Services.AddScoped<MalwareRepository>();
+builder.Services.AddScoped<IndicatorRepository>();
+builder.Services.AddScoped<MalwareService>();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// Pipeline
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -26,9 +37,6 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
 app.UseAuthorization();
-
 app.MapControllers();
-
 app.Run();
