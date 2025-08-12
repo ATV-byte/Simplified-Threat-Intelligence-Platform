@@ -16,9 +16,4 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
   </ItemGroup>
 
-  <!-- Exclude test sources from the main application build -->
-  <ItemGroup>
-    <Compile Remove="Simplified-Threat-Intelligence-Platform.Tests/**/*.cs" />
-  </ItemGroup>
-
 </Project>
