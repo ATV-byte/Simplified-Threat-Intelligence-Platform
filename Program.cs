@@ -10,10 +10,9 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// MongoDB (Cosmos for Mongo) via env var
+// Mongo (Cosmos for Mongo) – reads from AZURE_COSMOS_CONNECTIONSTRING
 builder.Services.AddSingleton<IMongoDatabase>(_ =>
 {
-    // Prefer Azure app setting (env var)
     var conn = builder.Configuration["AZURE_COSMOS_CONNECTIONSTRING"]
                ?? Environment.GetEnvironmentVariable("AZURE_COSMOS_CONNECTIONSTRING");
 
@@ -23,14 +22,13 @@ builder.Services.AddSingleton<IMongoDatabase>(_ =>
     var url = new MongoUrl(conn);
     var client = new MongoClient(url);
 
-    // If the database name isn’t in the connection string, fall back to config, else default
     var dbName = !string.IsNullOrWhiteSpace(url.DatabaseName)
         ? url.DatabaseName
         : (builder.Configuration["Mongo:Database"] ?? "ti_db");
 
     var db = client.GetDatabase(dbName);
 
-    // Ensure indexes once at startup
+    // ensure indexes at startup
     IndexInitializer.EnsureAsync(db).GetAwaiter().GetResult();
     return db;
 });
@@ -42,13 +40,19 @@ builder.Services.AddScoped<MalwareService>();
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
+// Swagger ON in Prod
+app.UseSwagger();
+app.UseSwaggerUI(o =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+    o.RoutePrefix = "swagger"; // /swagger
+    o.SwaggerEndpoint("/swagger/v1/swagger.json", "Threat Intel API v1");
+});
+
+// Root → Swagger (or health if you prefer)
+app.MapGet("/", () => Results.Redirect("/swagger"));
 
 app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
+
 app.Run();
