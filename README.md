@@ -68,6 +68,8 @@ Indicator values subset/superset — the set of indicatorValues in one document 
 | **POST** `/api/malware/search` | Search malware whose indicators match any given values. | **SearchRequestDto**:<br>• `values` *(list\<string>)*                                                                                                                                                                                        | **200 OK** — list of `MalwareViewDto`<br>**204 No Content** if none                                         | —                             |
 | **PUT** `/api/malware/{id}`    | Update an existing malware.                             | **MalwareUpdateDto** (same fields as `MalwareCreateDto`)                                                                                                                                                                                     | **200 OK** — no body                                                                                        | **409 Conflict** on duplicate |
 
+# Authorization and Authentication
+
 # 1️⃣ With Microsoft Entra ID
 
 ## How it works
@@ -85,7 +87,6 @@ Indicator values subset/superset — the set of indicatorValues in one document 
 2. The API receives a request with `Authorization: Bearer <token>`.
 3. The API validates the signature, expiration, and issuer.
 4. If valid → processing continues, otherwise returns **401 Unauthorized**.
-
 
 
 ## Folder structure for Microsoft Entra ID
