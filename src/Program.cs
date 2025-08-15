@@ -10,14 +10,15 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Mongo (Cosmos for Mongo) – reads from AZURE_COSMOS_CONNECTIONSTRING
+// Mongo (Cosmos for Mongo)
 builder.Services.AddSingleton<IMongoDatabase>(_ =>
 {
-    var conn = builder.Configuration["AZURE_COSMOS_CONNECTIONSTRING"]
-               ?? Environment.GetEnvironmentVariable("AZURE_COSMOS_CONNECTIONSTRING");
+    var conn =
+        builder.Configuration["AZURE_COSMOS_CONNECTIONSTRING"] 
+        ?? Environment.GetEnvironmentVariable("AZURE_COSMOS_CONNECTIONSTRING");
 
     if (string.IsNullOrWhiteSpace(conn))
-        throw new InvalidOperationException("AZURE_COSMOS_CONNECTIONSTRING is not set.");
+        throw new InvalidOperationException("AZURE_COSMOS_CONNECTIONSTRING is not set in either configuration or environment.");
 
     var url = new MongoUrl(conn);
     var client = new MongoClient(url);
@@ -32,6 +33,7 @@ builder.Services.AddSingleton<IMongoDatabase>(_ =>
     IndexInitializer.EnsureAsync(db).GetAwaiter().GetResult();
     return db;
 });
+
 
 // DI
 builder.Services.AddScoped<MalwareRepository>();
