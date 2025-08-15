@@ -36,9 +36,9 @@ builder.Services.AddSingleton<IMongoDatabase>(_ =>
 
 
 // DI
-builder.Services.AddScoped<MalwareRepository>();
-builder.Services.AddScoped<IndicatorRepository>();
-builder.Services.AddScoped<MalwareService>();
+builder.Services.AddScoped<IMalwareRepository, MalwareRepository>();
+builder.Services.AddScoped<IIndicatorRepository, IndicatorRepository>();
+builder.Services.AddScoped<IMalwareService, MalwareService>();
 
 var app = builder.Build();
 

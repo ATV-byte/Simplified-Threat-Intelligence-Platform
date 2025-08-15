@@ -4,7 +4,7 @@ using Simplified_Threat_Intelligence_Platform.Dtos;
 
 namespace Simplified_Threat_Intelligence_Platform.Repositories
 {
-    public class IndicatorRepository
+    public class IndicatorRepository : IIndicatorRepository
     {
         private readonly IMongoCollection<BsonDocument> _col;
         public IndicatorRepository(IMongoDatabase db) => _col = db.GetCollection<BsonDocument>("indicators");
