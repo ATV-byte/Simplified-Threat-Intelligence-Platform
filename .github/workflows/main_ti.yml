@@ -19,18 +19,17 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
-      # Restore toată soluția, ca să acopere și proiectul de teste
+      # Restore toată soluția, ca să includă și proiectele de teste
       - name: Restore
         run: dotnet restore ./Simplified-Threat-Intelligence-Platform.sln
 
-      # Build pe Release (fără rebuild la test/publish)
+      # Build pe Release
       - name: Build
         run: dotnet build ./Simplified-Threat-Intelligence-Platform.sln -c Release --no-restore
 
-      # Rulează testele xUnit (eșuează pipeline-ul dacă pică)
-	- name: Test (run all test projects in the solution)
-  	run: dotnet test ./Simplified-Threat-Intelligence-Platform.sln -c Release --no-build --logger "trx;LogFileName=testResults.trx"
-
+      # Rulează testele pentru toate proiectele din soluție
+      - name: Test (run all test projects in the solution)
+        run: dotnet test ./Simplified-Threat-Intelligence-Platform.sln -c Release --no-build --logger "trx;LogFileName=testResults.trx"
 
       # Publică DOAR proiectul web din root
       - name: Publish
