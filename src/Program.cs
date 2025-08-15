@@ -10,15 +10,22 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Mongo (Cosmos for Mongo)
+// ---- Mongo (Cosmos for Mongo) ----
 builder.Services.AddSingleton<IMongoDatabase>(_ =>
 {
-    var conn =
-        builder.Configuration["AZURE_COSMOS_CONNECTIONSTRING"] 
-        ?? Environment.GetEnvironmentVariable("AZURE_COSMOS_CONNECTIONSTRING");
+    // 1) Azure App Service: prefer ENV var
+    string? conn = Environment.GetEnvironmentVariable("AZURE_COSMOS_CONNECTIONSTRING");
+
+    // 2) Azure App Service (opțiune recomandată): ConnectionStrings:CosmosMongo
+    if (string.IsNullOrWhiteSpace(conn))
+        conn = builder.Configuration.GetConnectionString("CosmosMongo");
+
+    // 3) Local dev fallback din appsettings.json
+    if (string.IsNullOrWhiteSpace(conn))
+        conn = builder.Configuration["AZURE_COSMOS_CONNECTIONSTRING_local"];
 
     if (string.IsNullOrWhiteSpace(conn))
-        throw new InvalidOperationException("AZURE_COSMOS_CONNECTIONSTRING is not set in either configuration or environment.");
+        throw new InvalidOperationException("No Mongo/Cosmos connection string configured. Set AZURE_COSMOS_CONNECTIONSTRING (env) or ConnectionStrings:CosmosMongo or AZURE_COSMOS_CONNECTIONSTRING_local.");
 
     var url = new MongoUrl(conn);
     var client = new MongoClient(url);
@@ -29,11 +36,12 @@ builder.Services.AddSingleton<IMongoDatabase>(_ =>
 
     var db = client.GetDatabase(dbName);
 
-    // ensure indexes at startup
+    // Dacă indexarea ar putea pica la first run, poți prinde excepția:
+    // try { await IndexInitializer.EnsureAsync(db); } catch (Exception ex) { Console.WriteLine(ex); }
     IndexInitializer.EnsureAsync(db).GetAwaiter().GetResult();
+
     return db;
 });
-
 
 // DI
 builder.Services.AddScoped<IMalwareRepository, MalwareRepository>();
@@ -42,16 +50,13 @@ builder.Services.AddScoped<IMalwareService, MalwareService>();
 
 var app = builder.Build();
 
-// Swagger ON in Prod
+// Swagger ON în Prod
 app.UseSwagger();
 app.UseSwaggerUI(o =>
 {
     o.RoutePrefix = "swagger"; // /swagger
     o.SwaggerEndpoint("/swagger/v1/swagger.json", "Threat Intel API v1");
 });
-
-// Root → Swagger (or health if you prefer)
-app.MapGet("/", () => Results.Redirect("/swagger"));
 
 app.UseHttpsRedirection();
 app.UseAuthorization();
