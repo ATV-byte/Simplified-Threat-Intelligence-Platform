@@ -5,6 +5,9 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+env:
+  APP_NAME: TI  
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -22,7 +25,7 @@ jobs:
       - name: List csproj (debug)
         run: |
           pwd
-          find . -maxdepth 4 -type f -name "*.csproj" -print
+          find . -maxdepth 5 -type f -name "*.csproj" -print
 
       - name: Detect web project
         id: detect
@@ -46,7 +49,7 @@ jobs:
       - name: Build (solution)
         run: dotnet build ./Simplified-Threat-Intelligence-Platform.sln -c Release --no-restore
 
-      - name: Test (run all test projects)
+      - name: Test (all test projects)
         run: dotnet test ./Simplified-Threat-Intelligence-Platform.sln -c Release --no-build --logger "trx;LogFileName=testResults.trx"
 
       - name: Publish (web project)
@@ -54,9 +57,8 @@ jobs:
 
       - name: Show publish content (debug)
         run: |
-          echo "Published files:"
           ls -la ${{ github.workspace }}/publish
-          test -f "${{ github.workspace }}/publish/appsettings.json" && echo "appsettings.json present"
+          test -f "${{ github.workspace }}/publish/Simplified-Threat-Intelligence-Platform.dll" && echo "dll OK"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -85,9 +87,37 @@ jobs:
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_9CCCBB3BD51A41559C3AB4D68CCD4DFE }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_2EF8250BEA3E4396B04EAAF51B37E677 }}
 
+      - name: Ensure startup command & settings
+        uses: azure/cli@v2
+        with:
+          inlineScript: |
+            set -euo pipefail
+            APP_NAME="${APP_NAME}"
+            # Află automat resource group-ul Web App-ului
+            RG=$(az webapp list --query "[?name=='${APP_NAME}'].resourceGroup | [0]" -o tsv)
+            if [ -z "${RG}" ]; then
+              echo "Nu am găsit Web App '${APP_NAME}' in subscription."
+              exit 1
+            fi
+            echo "Resource group: ${RG}"
+
+         
+            az webapp config set \
+              --resource-group "${RG}" \
+              --name "${APP_NAME}" \
+              --startup-file "dotnet /home/site/wwwroot/Simplified-Threat-Intelligence-Platform.dll"
+
+          
+            az webapp config appsettings set \
+              --resource-group "${RG}" \
+              --name "${APP_NAME}" \
+              --settings ASPNETCORE_URLS="http://0.0.0.0:8080"
+
+            echo "Startup command și app settings setate."
+
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
-          app-name: 'TI'
+          app-name: ${{ env.APP_NAME }}
           slot-name: 'Production'
           package: ./publish
