@@ -28,8 +28,9 @@ jobs:
         run: dotnet build ./Simplified-Threat-Intelligence-Platform.sln -c Release --no-restore
 
       # Rulează testele xUnit (eșuează pipeline-ul dacă pică)
-      - name: Test
-        run: dotnet test ./Simplified-Threat-Intelligence-Platform.Tests/Simplified-Threat-Intelligence-Platform.Tests.csproj -c Release --no-build --logger "trx;LogFileName=testResults.trx"
+	- name: Test (run all test projects in the solution)
+  	run: dotnet test ./Simplified-Threat-Intelligence-Platform.sln -c Release --no-build --logger "trx;LogFileName=testResults.trx"
+
 
       # Publică DOAR proiectul web din root
       - name: Publish
